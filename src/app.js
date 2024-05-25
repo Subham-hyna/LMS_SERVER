@@ -18,8 +18,10 @@ app.use(cookieParser());
 
 //Routes
 import userRouter from "./routes/user.routes.js"
+import bookRouter from "./routes/book.routes.js"
 
-app.use("/api/v1/users", userRouter)
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/book", bookRouter);
 
 
 app.use(errorMiddleware);

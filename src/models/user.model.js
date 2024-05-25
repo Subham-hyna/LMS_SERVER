@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import { Schema, model } from "mongoose";
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import { MEMBERSHIP_STATUS, USER_ROLES } from "../constants.js";
@@ -123,10 +123,9 @@ userSchema.methods.generateVerificationTokenAndOtp = function () {
 }
 
 userSchema.methods.getResetPasswordToken = function () {
-    // Generating Token
+
     const resetToken = crypto.randomBytes(20).toString("hex");
   
-    // Hashing and adding resetPasswordToken to userSchema
     this.resetPasswordToken = crypto
       .createHash("sha256")
       .update(resetToken)
@@ -138,4 +137,4 @@ userSchema.methods.getResetPasswordToken = function () {
 };
   
 
-export const User = mongoose.model("User", userSchema)
+export const User = model("User", userSchema)

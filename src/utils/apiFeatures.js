@@ -26,6 +26,29 @@ class ApiFeatures {
         this.query = this.query.find(keyword);
       return this;
     }
+
+    searchBook() {
+      const keyword = this.queryStr.keyword
+        ? {
+            $or : [
+                {ISBN: {
+                    $regex: this.queryStr.keyword,
+                    $options: "i",
+                }},
+                {title: {
+                    $regex: this.queryStr.keyword,
+                    $options: "i",
+                }},
+                {author: {
+                    $regex: this.queryStr.keyword,
+                    $options: "i",
+                }}
+            ]
+          }
+        : {};
+        this.query = this.query.find(keyword);
+      return this;
+    }
   
     filter() {
       const queryCopy = { ...this.queryStr };
