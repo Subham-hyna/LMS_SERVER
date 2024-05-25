@@ -1,4 +1,4 @@
-const userVerificationTemplate = (name, emailVerificationLink ,OTP) => {
+const userCredentialsTemplate = (email, regNo, password) => {
     return `
     <!DOCTYPE html>
     <html>
@@ -13,9 +13,9 @@ const userVerificationTemplate = (name, emailVerificationLink ,OTP) => {
         <div class="wrapper">
             <div class="box">
              <div>
-                    <h4 class="end">${name}</h4>
-                    <a href=${emailVerificationLink}>Click here</a>
-                    <p>${OTP}</p>
+                    <h4 class="end">${email} ${regNo}</h4>
+                    <p> Password is ${password}</p>
+
                 </div>
             </div>
             <div class="box-bottom">
@@ -27,4 +27,4 @@ const userVerificationTemplate = (name, emailVerificationLink ,OTP) => {
     `
 }
 
-export default userVerificationTemplate;
+export default userCredentialsTemplate;

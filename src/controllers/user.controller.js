@@ -6,6 +6,11 @@ import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import userVerificationTemplate from "../mailTemplates/userVerification.template.js";
+import userCredentialsTemplate from "../mailTemplates/userCredentials.template.js";
+import { sendToken } from "../utils/sendToken.js";
+import { ApiFeatures } from "../utils/apiFeatures.js";
+import { USER_RESULT_PER_PAGE } from "../constants.js";
+import { passwordResetMail } from "../mailTemplates/passwordReset.template.js";
 
 export const registerUser = asyncHandler( async(req,res,next) => {
 
@@ -19,27 +24,31 @@ export const registerUser = asyncHandler( async(req,res,next) => {
         $or: [{ email }, { registrationNo }]
     })
 
-
-    const image = await uploadOnCloudinary(req.file.path)
-    const avatar = {
-      public_id : image.public_id,
-      url : image.secure_url
-    }
-
     if(userExist){
-        if(userExist.isEmailVerified){
+        if(userExist.isUserVerified){
             return next(new ApiError(400,"User already exist"))
         }
         else{
-            userExist.name = name;
-            userExist.email = email;
-            userExist.registrationNo = registrationNo;
-            deleteFromCloudinary(userExist.avatar.public_id);
-            userExist.avatar = avatar
-
-            await userExist.save({validateBeforeSave : true});
-
-            const updatedUser = await User.findById(userExist._id);
+            const image = await uploadOnCloudinary(req.file.path)
+            const avatar = {
+              public_id : image.public_id,
+              url : image.secure_url
+            }
+            await deleteFromCloudinary(userExist.avatar.public_id);
+            const updatedUser = await User.findByIdAndUpdate(
+                userExist._id,
+                {
+                    $set: {
+                        name,
+                        email,
+                        registrationNo,
+                        avatar
+                    }
+                },
+                {
+                    new: true
+                }
+            )
 
             const {verifyToken, OTP} = updatedUser.generateVerificationTokenAndOtp();
     
@@ -50,16 +59,21 @@ export const registerUser = asyncHandler( async(req,res,next) => {
             await sendEmail(updatedUser.email,"User Verification Mail", userVerificationTemplate(updatedUser.name,VerificationLink,OTP))
 
             res.status(200).json(
-                new ApiResponse(200,updatedUser,"User Updated not verified")
+                new ApiResponse(200,{user:updatedUser},"User Updated not verified")
             )
         }
     }else{
+        const image = await uploadOnCloudinary(req.file.path)
+        const avatar = {
+          public_id : image.public_id,
+          url : image.secure_url
+        }
         const user = await User.create({
             name,
             email,
             registrationNo,
-            password: "123456",
-            avatar
+            avatar,
+            password: "123456"
         })
 
         const createdUser = await User.findById(user._id);
@@ -76,8 +90,10 @@ export const registerUser = asyncHandler( async(req,res,next) => {
 
             await sendEmail(createdUser.email,"User Verification Mail", userVerificationTemplate(createdUser.name,VerificationLink,OTP))
 
-        res.status(201).json(
-            new ApiResponse(201,createdUser,"User Created Successfully")
+        res
+        .status(201)
+        .json(
+            new ApiResponse(201,{user:createdUser},"User Created Successfully")
         )
     }
 
@@ -95,26 +111,316 @@ export const verifyUser = asyncHandler( async(req,res,next) => {
   
     const user = await User.findOne({
       verificationToken
-    })
+    }).select("+password")
 
     if(!user){
-        return next(new ApiError(402,"Verification Link is invalid"))
+        return next(new ApiError(400,"Verification Link is invalid"))
     }
 
     if(user.verificationOTP !== otp){
-        return next(new ApiError(402,"OTP is invalid"))
+        return next(new ApiError(400,"OTP is invalid"))
     }
 
-    user.isEmailVerified = true;
-    user.verificationToken = undefined;
-    user.verificationOTP = undefined;
+    let password = '';
+    const str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+        'abcdefghijklmnopqrstuvwxyz0123456789@#$';
+ 
+    for (let i = 1; i <= 8; i++) {
+        let char = Math.floor(Math.random()
+            * str.length + 1);
+ 
+        password += str.charAt(char)
+    }
 
-    await user.save({validateBeforeSave: false});
+    const verifiedUser = await User.findByIdAndUpdate(
+        user._id,
+        {
+            $unset:{
+                verificationOTP: 1,
+                verificationToken: 1
+            },
+            $set:{
+                isUserVerified: true
+            }
+        },
+        {
+            new: true
+        }
+    )
+    
+    verifiedUser.password = password;
+
+    await verifiedUser.save({validateBeforeSave: false})
+
+    await sendEmail(verifiedUser.email,"Account Credentials",userCredentialsTemplate(verifiedUser.email,verifiedUser.registrationNo,password));
 
     res.status(201).json(
-        new ApiResponse(201,user,"You are successfully Verified")
+        new ApiResponse(201,{user: verifiedUser},"You are successfully Verified")
     )
 })
 
 export const loginUser = asyncHandler( async(req,res,next) => {
+
+    const { email, registrationNo, password } = req.body;
+
+    if((!email && !registrationNo) || !password){
+        return next(new ApiError(400, "All fields are required"))
+    }
+
+    const user = await User.findOne({
+        $or:[{ email },{ registrationNo }]
+    }).select("+password")
+
+    if(!user){
+        return next(new ApiError(400,"User doesn't exist"));
+    }
+
+    if(!user.isUserVerified){
+        return next(new ApiError(400,"User not verified. Check your mail for verification"))
+    }
+
+    const isPasswordValid = await user.isPasswordCorrect(password);
+
+    if(!isPasswordValid){
+        return next(new ApiError(400,"Invalid user credentials"));
+    }
+
+    sendToken(user,200,res,"Logged In Successfully");
 })
+
+export const logout = asyncHandler( async(req,res,next) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1 
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("LMS_accessToken", options)
+    .clearCookie("LMS_refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+export const getCurrentUser = asyncHandler(async(req,res,next)=>{
+    res.status(200).json(
+        new ApiResponse(200,{user:req.user},"User fetched successfully")
+    )
+})
+
+export const changeCurrentPassword = asyncHandler(async(req,res,next) => {
+    const {oldPassword, newPassword} = req.body
+
+    const user = await User.findById(req.user?._id).select("+password")
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password")
+    }
+
+    user.password = newPassword
+    await user.save({validateBeforeSave: false})
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
+
+})
+
+export const updateAvatar = asyncHandler(async(req,res,next) => {
+    
+    if(!req.file){
+        return next(new ApiError(400,"Please select a file"))
+    }
+
+    const user = await User.findById(req.user?._id);
+    await deleteFromCloudinary(user.avatar.public_id);
+
+
+    const image = await uploadOnCloudinary(req.file.path);
+
+    const avatar = {
+        public_id: image.public_id,
+        url: image.secure_url
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        user._id,
+        {
+            $set:{
+                avatar
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    if(!updatedUser){
+        return next(new ApiError(401,"Avatar not uploaded"))
+    }
+
+    res
+    .status(201)
+    .json(
+        new ApiResponse(201,{user: updatedUser},"Avatar Updated successfully")
+    )
+})
+
+export const getUser = asyncHandler( async(req,res,next) => {
+
+    const resultPerPage = USER_RESULT_PER_PAGE;
+
+    let apiFeatures = new ApiFeatures(User.find({isUserVerified: true}).find({_id:{$ne:req.user._id}}).sort({createdAt : -1}),req.query)
+    .searchUser()
+    .filter()
+
+    let users = await apiFeatures.query;
+
+    const userFilteredCount = users.length;
+
+    apiFeatures = new ApiFeatures(User.find({isUserVerified: true}).find({_id:{$ne:req.user._id}}).sort({createdAt : -1}),req.query)
+    .searchUser()
+    .filter()
+    .pagination(resultPerPage);
+
+    users = await apiFeatures.query;
+
+    if(!users){
+        return next(new ApiError(401,"Error in fetching users"))
+    }
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,{
+            users,
+            resultPerPage,
+            userFilteredCount
+        },"Users fetched successfully")
+    )
+})
+
+export const getSingleUser = asyncHandler( async(req,res,next) => {
+
+    const user = await User.findById(req.params.id);
+
+    if(!user){
+        return next(new ApiError(401,"User doesn't exist"));
+    }
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,
+            {user},
+            "User fetched successfully")
+    )
+
+})
+
+export const changeMembershipStatus = asyncHandler( async(req,res,next) => {
+
+    const { membershipStatus } = req.body;
+
+    const user = await User.findById(req.params.id);
+
+    if(!user){
+        return next(new ApiError(401,"User doesn't exist"));
+    }
+
+    user.membershipStatus = membershipStatus;
+    await user.save({validateBeforeSave: true});
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,
+            {user},
+            "User Membership Status changed successfully")
+    )
+})
+
+export const forgotPassword = asyncHandler( async(req,res,next) => {
+
+    const user = await User.findOne({ email: req.body.email , 
+        isUserVerified: true});
+  
+    if (!user) {
+      return next(new ApiError(404,"User not found"));
+    }
+  
+    const resetToken = user.getResetPasswordToken();
+    
+    await user.save({ validateBeforeSave: false });
+  
+    const resetPasswordUrl = process.env.FRONTEND_URL + resetToken ;
+  
+    try {
+      await sendEmail(user.email , "Password Reset Request" , passwordResetMail(user.name , resetPasswordUrl));
+  
+      res.status(200).json({
+        success: true,
+        message: `Email sent to ${user.email} successfully`,
+      });
+    } catch (error) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+  
+      await user.save({ validateBeforeSave: false });
+  
+      return next(new ApiError(500,error.message));
+    }
+  });
+
+export const resetPassword = asyncHandler(async (req, res, next) => {
+
+    const { password, confirmPassword } = req.body;
+
+    if(!password || !confirmPassword ){
+        return next(new ApiError(400, "Fill up al the fields"))
+    }
+
+    if ( password !== confirmPassword ) {
+        return next(new ApiError(400,"Password does not password"));
+    }
+
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+  
+    const user = await User.findOne({
+      resetPasswordToken,
+      isUserVerified: true,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+  
+    if (!user) {
+      return next(
+        new ApiError(
+          400,
+          "Reset Password Token is invalid or has been expired"
+        )
+      );
+    }
+  
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+  
+    await user.save({validateBeforeSave: false});
+  
+    sendToken(user, 200, res , "Logged In successfully");
+  });
