@@ -26,7 +26,7 @@ export const registerUser = asyncHandler( async(req,res,next) => {
 
     if(userExist){
         if(userExist.isUserVerified){
-            return next(new ApiError(400,"User already exist"))
+            return next(new ApiError(400,"User already exist for this email or registartion Number"))
         }
         else{
             const image = await uploadOnCloudinary(req.file.path)
@@ -370,10 +370,9 @@ export const forgotPassword = asyncHandler( async(req,res,next) => {
     try {
       await sendEmail(user.email , "Password Reset Request" , passwordResetMail(user.name , resetPasswordUrl));
   
-      res.status(200).json({
-        success: true,
-        message: `Email sent to ${user.email} successfully`,
-      });
+      res.status(200).json(
+        new ApiResponse(201,{},`Email send to ${user.email} successfully`)
+      );
     } catch (error) {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;

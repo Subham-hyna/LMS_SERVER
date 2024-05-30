@@ -121,3 +121,7 @@ export const getAllBooks = asyncHandler(async(req,res,next) => {
         },"Books fetched successfully")
     )
 })
+
+export const updateStock = asyncHandler(async(req,res,next) => {
+    
+})
