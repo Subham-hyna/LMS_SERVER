@@ -49,13 +49,15 @@ export const addBook = asyncHandler(async(req,res,next) => {
 
 export const editBook = asyncHandler( async(req,res,next) => {
 
-    const { ISBN, title, author, genre, edition, publishedYear } = req.body;
+    const { ISBN, title, author, genre, edition, publishedYear, stock } = req.body;
 
     const book = await Book.findById(req.params.id);
 
     if(!book){
         return next(new ApiError(400,"Book doesn't exist"))
     }
+
+    const inStock = (stock &&( stock > 0 ? true : false))
 
     const updatedBook = await Book.findByIdAndUpdate(
         req.params.id,
@@ -64,8 +66,10 @@ export const editBook = asyncHandler( async(req,res,next) => {
             title: title || book?.title,
             author: author || book?.author,
             edition: edition || book?.edition,
+            genre: genre || book?.genre,
             publishedYear: publishedYear || book?.publishedYear,
-
+            stock: stock || book?.stock,
+            inStock
         },
         {
             new: true
@@ -120,8 +124,4 @@ export const getAllBooks = asyncHandler(async(req,res,next) => {
             bookFilteredCount
         },"Books fetched successfully")
     )
-})
-
-export const updateStock = asyncHandler(async(req,res,next) => {
-    
 })

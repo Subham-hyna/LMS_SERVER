@@ -16,6 +16,10 @@ app.use(express.urlencoded({extended: true, limit: URLDATA_LIMIT}));
 app.use(express.static("public"));
 app.use(cookieParser());
 
+app.get("/api/v1",(req,res)=>{
+    res.send("<h1>Api is working</h1>")
+})
+
 //Routes
 import userRouter from "./routes/user.routes.js"
 import bookRouter from "./routes/book.routes.js"

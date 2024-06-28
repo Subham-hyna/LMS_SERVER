@@ -54,9 +54,9 @@ export const registerUser = asyncHandler( async(req,res,next) => {
     
             await updatedUser.save({ validateBeforeSave: false });
           
-            const VerificationLink = process.env.FRONTEND_URL + verifyToken ;
+            const VerificationLink = process.env.FRONTEND_URL+ "user/verify/" + verifyToken ;
 
-            await sendEmail(updatedUser.email,"User Verification Mail", userVerificationTemplate(updatedUser.name,VerificationLink,OTP))
+            await sendEmail(updatedUser.email,"User Verification", userVerificationTemplate(updatedUser.name,VerificationLink,OTP))
 
             res.status(200).json(
                 new ApiResponse(200,{user:updatedUser},"User Updated not verified")
@@ -86,9 +86,9 @@ export const registerUser = asyncHandler( async(req,res,next) => {
     
             await createdUser.save({ validateBeforeSave: false });
           
-            const VerificationLink = process.env.FRONTEND_URL + verifyToken ;
+            const VerificationLink = process.env.FRONTEND_URL + "user/verify/" +verifyToken ;
 
-            await sendEmail(createdUser.email,"User Verification Mail", userVerificationTemplate(createdUser.name,VerificationLink,OTP))
+            await sendEmail(createdUser.email,"User Verification", userVerificationTemplate(createdUser.name,VerificationLink,OTP))
 
         res
         .status(201)
@@ -152,10 +152,10 @@ export const verifyUser = asyncHandler( async(req,res,next) => {
 
     await verifiedUser.save({validateBeforeSave: false})
 
-    await sendEmail(verifiedUser.email,"Account Credentials",userCredentialsTemplate(verifiedUser.email,verifiedUser.registrationNo,password));
+    await sendEmail(verifiedUser.email,"Account Credentials",userCredentialsTemplate(verifiedUser.name,verifiedUser.email,verifiedUser.registrationNo,password,process.env.FRONTEND_URL));
 
     res.status(201).json(
-        new ApiResponse(201,{user: verifiedUser},"You are successfully Verified")
+        new ApiResponse(201,{},"You are successfully Verified. Account Credentials have been set via email")
     )
 })
 
@@ -365,10 +365,10 @@ export const forgotPassword = asyncHandler( async(req,res,next) => {
     
     await user.save({ validateBeforeSave: false });
   
-    const resetPasswordUrl = process.env.FRONTEND_URL + resetToken ;
+    const resetPasswordUrl = process.env.FRONTEND_URL + "user/reset-password/" + resetToken ;
   
     try {
-      await sendEmail(user.email , "Password Reset Request" , passwordResetMail(user.name , resetPasswordUrl));
+      await sendEmail(user.email , "Password Reset" , passwordResetMail(user.name , resetPasswordUrl));
   
       res.status(200).json(
         new ApiResponse(201,{},`Email send to ${user.email} successfully`)

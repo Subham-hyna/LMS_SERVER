@@ -26,9 +26,9 @@ export const sendToken = async(user, statusCode, res, message) => {
         new ApiResponse(
             200, 
             {
-                user:loggedInUser, accessToken, refreshToken, message
+                user:loggedInUser, accessToken, refreshToken
             },
-            "User logged In Successfully"
+            message
         )
     )
 

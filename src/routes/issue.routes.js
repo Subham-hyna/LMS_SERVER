@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authoriseRoles, verifyJWT } from "../middlewares/auth.middleware.js";
-import { approveIssueRequest, deleteIssueRequest, getAllIssues, getCurrentUserIssueRequests, getSingleUserIssues, issueRequest, returnBook } from "../controllers/issue.controller.js";
+import { approveIssueRequest, deleteCurrentUserIssueRequest, deleteIssueRequest, getAllIssues, getCurrentUserIssueRequests, getSingleUserIssues, issueRequest, renewIssue, returnBook } from "../controllers/issue.controller.js";
 
 const router = Router();
 
@@ -17,12 +17,18 @@ router.route("/get-singleUser/:userId")
     .get(verifyJWT,authoriseRoles("ADMIN"),getSingleUserIssues)
 
 router.route("/delete-issueRequest/:issueId")
-    .delete(verifyJWT,deleteIssueRequest)
+    .delete(verifyJWT,authoriseRoles("ADMIN"),deleteIssueRequest)
 
-router.route("/approve-issueRequest/:issueId")
+router.route("/delete-myIssueRequest/:issueId")
+    .delete(verifyJWT,deleteCurrentUserIssueRequest)
+
+router.route("/approve-issueRequest")
     .put(verifyJWT,authoriseRoles("ADMIN"),approveIssueRequest)
 
-router.route("/return/:issueId")
+router.route("/renew-issue")
+    .put(verifyJWT,authoriseRoles("ADMIN"),renewIssue)
+
+router.route("/return")
     .put(verifyJWT,authoriseRoles("ADMIN"),returnBook);
 
 export default router;

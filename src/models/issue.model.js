@@ -14,11 +14,9 @@ const issueSchema = new Schema({
     },
     issueDate:{
         type: Date,
-        required: true
     },
     dueDate:{
         type: Date,
-        required: true
     },
     returnDate:{
         type: Date,
