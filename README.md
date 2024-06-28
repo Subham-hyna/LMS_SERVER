@@ -97,14 +97,14 @@ Once the server is running, you can interact with the API using tools like Postm
 
 ### Borrowing
 - **POST /api/v1/issue/issue-request:** Generate a Borrow Request
-- **POST /api/v1/issue/get-currentUser-issues:** Return a book
+- **GET /api/v1/issue/get-currentUser-issues:** Get borrowing history of current login user
 - **GET /api/v1/issue/get-allIssues:** Get borrowing history
 - **GET /api/v1/issue/get-singleUser/:userId:** Get borrowing history of a single user
-- **GET /api/v1/issue/delete-issueRequest/:issueId:** Delete borrow request by issue ID
-- **GET /api/v1/issue/delete-myIssueRequest/:issueId:** Delete current user borrow request
-- **GET /api/v1/issue/approve-issueRequest:** Approve Borrow Issue Request 
-- **GET /api/v1/issue/renew-issue:** Renew a book
-- **GET /api/v1/issue/return:** Return a book
+- **DELETE /api/v1/issue/delete-issueRequest/:issueId:** Delete borrow request by issue ID
+- **DELETE /api/v1/issue/delete-myIssueRequest/:issueId:** Delete current user borrow request
+- **PUT /api/v1/issue/approve-issueRequest:** Approve Borrow Issue Request 
+- **PUT /api/v1/issue/renew-issue:** Renew a book
+- **PUT /api/v1/issue/return:** Return a book
 
 ## Contact
 For questions or support, please contact [subhamdutta460@gmail.com](mailto:subhamdutta460@gmail.com).
