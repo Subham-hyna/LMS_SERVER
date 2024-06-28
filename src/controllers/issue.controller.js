@@ -114,13 +114,13 @@ export const getSingleUserIssues = asyncHandler(async(req,res,next) => {
 
     const resultPerPage = SINGLE_USER_ISSUE_RESULT_PER_PAGE;
 
-    let issuesSearch = new ApiFeatures(Issue.find({userId}).sort({createdAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter();
+    let issuesSearch = new ApiFeatures(Issue.find({userId}).sort({updatedAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter();
 
     let issues = await issuesSearch.query;
 
     const issueFilteredCount = issues.length;
 
-    issuesSearch = new ApiFeatures(Issue.find({userId}).sort({createdAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter().pagination(resultPerPage);
+    issuesSearch = new ApiFeatures(Issue.find({userId}).sort({updatedAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter().pagination(resultPerPage);
 
     issues = await issuesSearch.query;
 
