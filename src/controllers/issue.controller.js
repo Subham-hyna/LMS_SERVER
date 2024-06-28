@@ -63,13 +63,13 @@ export const getCurrentUserIssueRequests = asyncHandler( async(req,res,next) => 
 
     const resultPerPage = SINGLE_USER_ISSUE_RESULT_PER_PAGE;
 
-    let apiFeatures = new ApiFeatures(Issue.find({userId:req.user._id}).sort({createdAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter();
+    let apiFeatures = new ApiFeatures(Issue.find({userId:req.user._id}).sort({updatedAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter();
 
     let issues = await apiFeatures.query;
 
     const issueFilteredCount = issues.length;
 
-    apiFeatures = new ApiFeatures(Issue.find({userId:req.user._id}).sort({createdAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter().pagination(resultPerPage);
+    apiFeatures = new ApiFeatures(Issue.find({userId:req.user._id}).sort({updatedAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter().pagination(resultPerPage);
 
     issues = await apiFeatures.query;
 
@@ -86,13 +86,13 @@ export const getAllIssues = asyncHandler(async(req,res,next) => {
 
     const resultPerPage = ALL_ISSUE_RESULT_PER_PAGE
 
-    let allIssuesSearch = new ApiFeatures(Issue.find().sort({createdAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter();
+    let allIssuesSearch = new ApiFeatures(Issue.find().sort({updatedAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query).filter();
     
     let allIssues = await allIssuesSearch.query;
 
     const issueFilteredCount = allIssues.length;
     
-    allIssuesSearch = new ApiFeatures(Issue.find().sort({createdAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query)
+    allIssuesSearch = new ApiFeatures(Issue.find().sort({updatedAt:-1}).populate("userId","name registrationNo email createdAt membershipStatus avatar").populate("bookId","ISBN title author publishedYear genre edition stock createdAt"),req.query)
     .filter()
     .pagination(resultPerPage);
 
