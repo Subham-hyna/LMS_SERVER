@@ -29,7 +29,7 @@ The Library Management System Server is a backend application designed to manage
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/library-management-system-server.git
+   git clone https://github.com/yourusername/LMS_SERVER.git
    cd library-management-system-server
 
 2. **Install dependencies:**
