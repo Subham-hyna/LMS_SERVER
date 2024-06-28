@@ -30,7 +30,7 @@ The Library Management System Server is a backend application designed to manage
 1. **Clone the repository:**
    ```sh
    git clone https://github.com/yourusername/LMS_SERVER.git
-   cd library-management-system-server
+   cd LMS_SERVER
 
 2. **Install dependencies:**
    ```sh
@@ -59,7 +59,7 @@ The Library Management System Server is a backend application designed to manage
    COOKIE_EXPIRE = 1
 
 
-3. **Start the server:**   
+4. **Start the server:**   
    ```sh
    npm start
 
