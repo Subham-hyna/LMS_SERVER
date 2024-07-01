@@ -178,6 +178,10 @@ export const approveIssueRequest = asyncHandler( async(req,res,next) => {
 
     const {issueId} = req.body;
 
+    if(req.user.membershipStatus != "ACTIVE"){
+        return next(new ApiError(400,"Member have no active memberships"))
+    }
+
     const isIssued = await Issue.findById(issueId);
 
     if(isIssued.transactionType !== "PENDING"){
