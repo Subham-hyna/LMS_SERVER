@@ -178,14 +178,17 @@ export const approveIssueRequest = asyncHandler( async(req,res,next) => {
 
     const {issueId} = req.body;
 
-    if(req.user.membershipStatus != "ACTIVE"){
-        return next(new ApiError(400,"Member have no active memberships"))
-    }
-
     const isIssued = await Issue.findById(issueId);
 
+    
     if(isIssued.transactionType !== "PENDING"){
         return next(new ApiError(200,"Issue invalid"))
+    }
+
+    const user = await User.findById(isIssued.userId);
+
+    if(user.membershipStatus != "ACTIVE"){
+        return next(new ApiError(400,"Member have no active memberships"))
     }
 
     const book = await Book.findById(isIssued.bookId);
